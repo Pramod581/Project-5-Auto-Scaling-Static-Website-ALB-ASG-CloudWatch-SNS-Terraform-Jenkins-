@@ -1,0 +1,28 @@
+pipeline {
+agent any
+environment {
+TF_WORKDIR = 'terraform'
+AWS_CREDS = credentials('aws-credentials') // create Jenkins credentials with this id
+}
+stages {
+stage('Checkout') {
+steps {
+checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/sruthi234/static-website-project.git']]])
+script {
+env.GIT_COMMIT_SHORT = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+}
+}
+}
+stage('Terraform Init') {
+steps {
+dir(TF_WORKDIR) {
+withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credentials']]) {
+sh 'terraform init -input=false'
+}
+}
+}
+}
+stage('Terraform Apply') {
+steps {
+dir(TF_WORKDIR) {
+withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-credenti
